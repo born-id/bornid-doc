@@ -101,6 +101,9 @@ const config: Config = {
       ],
       copyright: `Copyright © ${new Date().getFullYear()} DigiCAP, Inc. Built with Docusaurus.`,
     },
+    gtag: {
+      trackingID: 'G-R12SJXM1S5',
+    },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
