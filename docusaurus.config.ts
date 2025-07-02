@@ -15,7 +15,7 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://doc.bornid.io',
+  url: 'https://docs.bornid.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
@@ -40,6 +40,9 @@ const config: Config = {
     [
       'classic',
       {
+        gtag: {
+          trackingID: 'G-R12SJXM1S5',
+        },
         docs: {
           sidebarPath: './sidebars.ts',
           // Please change this to your repo.
