@@ -1,161 +1,195 @@
 ---
-title: BornID Metadata
+title: Metadata
 sidebar_position: 2
 ---
 
-# BornID Metadata
+# Metadata
 
-BornID Metadata is the core technology that ensures the origin and authenticity of digital content. Through a metadata system based on C2PA standards, it can track the entire process from content creation to distribution.
+BornID Metadata is a core technology that guarantees the provenance and authenticity of digital content. Based on the C2PA standard, this metadata system allows for tracking the entire process from content creation to distribution.
 
 ## Overview
 
 The BornID Metadata system securely records the following information:
 
-- **Creation Information**: When, where, and by whom the content was created
-- **Edit History**: All changes made to the content and editing tool information
-- **Distribution Path**: The routes through which content was propagated
-- **Verification Status**: Current integrity status of the content
+- **Creation Information**: When, where, and by whom the content was created.
+- **Edit History**: All changes made to the content and information about the editing tools.
+- **Distribution Path**: The path through which the content was disseminated.
+- **Verification Status**: The current integrity status of the content.
 
 ## Metadata Structure
 
-### Basic Information
+### Active Manifest
 
 ```json
 {
-  "claim": {
-    "dc:title": "Content Title",
-    "dc:format": "image/jpeg",
-    "tiff:ImageWidth": 1920,
-    "tiff:ImageLength": 1080,
-    "xmp:CreateDate": "2024-01-15T10:30:00Z",
-    "xmp:CreatorTool": "DigiCAP Content Creator v1.0"
+  "active_manifest": "urn:uuid:f6969d4b-5871-468e-b237-e21f8d2cc219",
+  "manifests": {
+    "urn:uuid:f6969d4b-5871-468e-b237-e21f8d2cc219": {
+      "claim_generator": "c2pa-rs/0.46.0",
+      "format": "image/jpeg",
+      "instance_id": "xmp:iid:626032b0-9050-4084-8af5-81175cdea0cd"
+    }
   }
 }
 ```
 
-### Signature Information
-
-```json
-{
-  "signature": {
-    "alg": "ps256",
-    "iss": "DigiCAP Authority",
-    "iat": 1705312200,
-    "claim_hash": "sha256:abc123...",
-    "cert_chain": ["-----BEGIN CERTIFICATE-----..."]
-  }
-}
-```
-
-### Provenance Information
+### Creative Work Information
 
 ```json
 {
   "assertions": [
     {
-      "label": "c2pa.actions",
+      "label": "stds.schema-org.CreativeWork",
       "data": {
-        "actions": [
+        "@context": "https://schema.org",
+        "@type": "CreativeWork",
+        "author": [
           {
-            "action": "c2pa.created",
-            "when": "2024-01-15T10:30:00Z",
-            "softwareAgent": "DigiCAP Creator v1.0"
+            "name": "Test User",
+            "@type": "Person"
+          },
+          {
+            "name": "Test Company",
+            "@type": "Company"
           }
-        ]
+        ],
+        "when": "2025-06-24T00:02:01Z"
       }
     }
   ]
 }
 ```
 
-## Digital Signatures
-
-### X.509 Certificate-based Signatures
-
-BornID uses X.509 certificates based on PKI (Public Key Infrastructure) to generate digital signatures.
-
-**Signing Process:**
-1. **Hash Generation**: Calculate SHA-256 hash of content and metadata
-2. **Signature Creation**: Digitally sign the hash value with a private key
-3. **Certificate Attachment**: Include public key certificate in metadata
-4. **Timestamp**: Add trusted time information
-
-### Signature Verification Process
-
-:::info Verification Steps
-1. **Certificate Validity**: Check certificate chain and expiration date
-2. **Signature Verification**: Verify digital signature with public key
-3. **Hash Comparison**: Compare current content hash with signed hash
-4. **Timestamp Verification**: Verify validity of signing timestamp
-:::
-
-## Metadata Usage
-
-### Metadata Retrieval via API
-
-```bash
-curl -X GET "https://api.digicap.com/v1/metadata/{content_id}" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json"
-```
-
-### Response Example
+### Ingredients Information
 
 ```json
 {
-  "status": "verified",
-  "content_id": "bc123456789",
-  "metadata": {
-    "creation_date": "2024-01-15T10:30:00Z",
-    "creator": "photographer@example.com",
-    "location": {
-      "latitude": 37.5665,
-      "longitude": 126.9780
-    },
-    "device_info": {
-      "make": "Canon",
-      "model": "EOS R5"
-    },
-    "editing_history": [
-      {
-        "timestamp": "2024-01-15T11:00:00Z",
-        "software": "Adobe Photoshop 2024",
-        "operation": "color_adjustment"
+  "ingredients": [
+    {
+      "title": "parent",
+      "format": "jpg",
+      "instance_id": "xmp:iid:7c0c4c00-e968-4a60-aa26-b362793fe6b2",
+      "relationship": "parentOf",
+      "thumbnail": {
+        "format": "image/jpeg",
+        "identifier": "self#jumbf=c2pa.assertions/c2pa.thumbnail.ingredient.jpeg"
       }
-    ]
+    }
+  ]
+}
+```
+
+### Content Fingerprint History
+
+```json
+"assertions": [
+  {
+    "label": "c2pa.soft-binding",
+    "data": {
+      "alg": "com.digicaps.fingerprint.1",
+      "blocks": [
+          {
+            "scope": {},
+            "value": "1*{hash_value}"
+          }
+      ]
+    }
   },
-  "verification": {
-    "signature_valid": true,
-    "certificate_valid": true,
-    "content_integrity": "intact"
+]
+```
+
+## Digital Signature
+
+### PS256 Signature System
+
+BornID provides strong digital signatures using the RSASSA-PSS with SHA-256 (PS256) algorithm.
+
+**Signature Information:**
+
+```json
+{
+  "signature_info": {
+    "alg": "Ps256",
+    "issuer": "DigiCAP Co.,Ltd.",
+    "cert_serial_number": "5539112271043283054276207401787004462"
+  }
+}
+```
+
+### Verification Process
+
+:::info Verification Steps
+
+1. **Claim Signature**: Verification of internal validity period and signature validity.
+2. **Hash URI Matching**: Check for consistency of hash URIs for all assertions.
+3. **Data Hash**: Verification of the integrity of the content data.
+4. **Thumbnail Verification**: Validation of thumbnails for the claim and parent content.
+   :::
+
+## Verification Results
+
+### Successful Verification Items
+
+```json
+{
+  "validation_results": {
+    "activeManifest": {
+      "success": [
+        {
+          "code": "claimSignature.validated",
+          "explanation": "claim signature valid"
+        },
+        {
+          "code": "assertion.dataHash.match",
+          "explanation": "data hash valid"
+        }
+      ],
+      "failure": []
+    }
   }
 }
 ```
 
 ## Security Considerations
 
-### Privacy Protection
+### Encryption Strength
 
-- **Selective Disclosure**: Protect sensitive metadata through encryption
-- **Anonymization Options**: Allow creator information to be processed anonymously
-- **GDPR Compliance**: Full compliance with European privacy protection regulations
+- **PS256 Signature**: Provides strong security with RSASSA-PSS with SHA-256.
+- **Hash Integrity**: SHA-256 hash verification for all assertions.
+- **Certificate Chain**: Ensures reliability through certificates issued by DigiCAP Co.,Ltd.
 
-### Tampering Prevention
+### Content Tracking
 
-- **Cryptographic Hash**: Use strong hash algorithms like SHA-256 or higher
-- **Chain Linking**: Each editing step is cryptographically linked to the previous step
-- **Real-time Verification**: Real-time monitoring of metadata integrity
+- **UUID-based**: Conflict-free tracking with a globally unique identifier.
+- **Relationship Mapping**: Tracks edit history through the `parentOf` relationship.
+- **Thumbnail Preservation**: Retains thumbnails for visual comparison before and after edits.
 
-## Supported Formats
+## Supported Formats and Tools
 
-| File Format | Metadata Support | Signature Support | Notes |
-|-------------|-----------------|------------------|-------|
-| **JPEG** | ✅ | ✅ | EXIF, XMP compatible |
-| **PNG** | ✅ | ✅ | XMP metadata |
-| **MP4** | ✅ | ✅ | QuickTime metadata |
-| **WebP** | ✅ | ✅ | Limited metadata |
-| **AVIF** | 🔄 | 🔄 | In development |
+| Component | Version | Supported Feature     | Notes                |
+| --------- | ------- | --------------------- | -------------------- |
+| **JPEG**  | -       | ✅ Metadata Embedding | JUMBF format support |
+| **PNG**   | ✅      | ✅                    | XMP metadata         |
+| **MP4**   | ✅      | ✅                    | QuickTime metadata   |
+
+## Real-world Use Cases
+
+### Content Provenance Verification
+
+The following information can be verified by analyzing the manifest:
+
+- **Creation Time**: 2025-06-24 00:02:01 UTC
+- **Creator**: Test User (Person), Test Company (Company)
+- **Edit History**: History of conversion from original JPG to JPEG exists.
+
+### Integrity Verification
+
+The integrity of the content is guaranteed as all verification items have passed successfully:
+
+- **Signature Verification**: ✅ Passed
+- **Hash Matching**: ✅ All assertion hash verifications completed
+- **Data Integrity**: ✅ No tampering of original data
 
 ---
 
-For more detailed technical specifications, please refer to the [C2PA Official Documentation](https://c2pa.org/specifications/specifications/1.3/specs/C2PA_Specification.html). 
+For more detailed technical specifications, refer to the [C2PA Official Documentation](https://c2pa.org/specifications/specifications/1.3/specs/C2PA_Specification.html).

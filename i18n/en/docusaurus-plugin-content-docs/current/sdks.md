@@ -5,222 +5,230 @@ sidebar_position: 4
 
 # Software Development Kits (SDKs)
 
-DigiCAP provides SDKs for various programming languages to easily integrate Content Authenticity services. Each SDK includes metadata generation, fingerprint recognition, and content verification features.
+We provide an iOS SDK to facilitate the easy integration of the DigiCAP Content Authenticity service. The SDK includes features for C2PA signing, media verification, fingerprint recognition, and content authentication.
 
-## Supported Languages
+## Supported Platforms
 
-| Language | Version | Status | Installation |
-|----------|---------|--------|--------------|
-| **JavaScript/Node.js** | v2.1.0 | ✅ Stable | `npm install @digicap/content-auth` |
-| **Python** | v2.0.5 | ✅ Stable | `pip install digicap-content-auth` |
-| **Java** | v1.8.3 | ✅ Stable | Maven/Gradle |
-| **Swift/iOS** | v1.5.0 | ✅ Stable | CocoaPods/SPM |
-| **Kotlin/Android** | v1.5.0 | ✅ Stable | Maven |
-| **Go** | v1.2.0 | 🔄 Beta | `go get github.com/digicap/go-sdk` |
-| **C#/.NET** | v1.1.0 | 🔄 Beta | NuGet |
+| Platform    | Version | Status       | Installation Method |
+| ----------- | ------- | ------------ | ------------------- |
+| **iOS**     | v0.0.1  | ✅ Supported | .a file             |
+| **Android** | -       | 🔄 Planned   | -                   |
 
-## JavaScript SDK
+## iOS SDK (BornIDSDK)
 
 ### Installation
 
-```bash
-npm install @digicap/content-auth
-# or
-yarn add @digicap/content-auth
+Currently, the SDK is planned to be provided as an `.a` file.
+For detailed installation instructions, please inquire at the email address below.
+
+**Contact**: info.bornid@digicaps.com
+
+### Initialization
+
+```swift
+import BornIDSDK
+
+// Configure the SDK
+BornIDSDK.shared.configure(baseURL: URL, apiKey: String)
 ```
 
-### Basic Usage
+## API Reference
 
-```javascript
-import { DigiCAPClient } from '@digicap/content-auth';
+### User Authentication
 
-// Initialize client
-const client = new DigiCAPClient({
-  apiKey: 'your-api-key-here',
-  environment: 'production' // or 'sandbox'
-});
+Log in with your user account to access all features of the SDK.
 
-// Add metadata to image
-async function addMetadata() {
-  try {
-    const result = await client.metadata.create({
-      file: './image.jpg',
-      metadata: {
-        title: 'Sample Image',
-        creator: 'photographer@example.com',
-        description: 'A beautiful sunset photo'
-      },
-      sign: true // Add digital signature
-    });
-    
-    console.log('Metadata added:', result);
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
+```swift
+// Login
+BornIDSDK.shared.login(email: String, password: String) async throws -> User
 
-// Generate and register fingerprint
-async function generateFingerprint() {
-  try {
-    const fingerprint = await client.fingerprint.generate({
-      file: './image.jpg',
-      register: true // Auto-register to database
-    });
-    
-    console.log('Fingerprint ID:', fingerprint.id);
-    console.log('Vector length:', fingerprint.vector.length);
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
-
-// Verify content
-async function verifyContent() {
-  try {
-    const verification = await client.verify({
-      file: './image.jpg',
-      checkMetadata: true,
-      checkFingerprint: true,
-      checkDeepfake: true
-    });
-    
-    console.log('Verification result:', verification);
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
+// Usage
+let user = try await BornIDSDK.shared.login(email: "user@example.com", password: "password")
 ```
 
-## Python SDK
+Terminates the session of the currently logged-in user.
 
-### Installation
+```swift
+// Logout
+BornIDSDK.shared.logout() async
 
-```bash
-pip install digicap-content-auth
+// Usage
+await BornIDSDK.shared.logout()
 ```
 
-### Basic Usage
+Checks if a user is currently logged in.
 
-```python
-from digicap_content_auth import DigiCAPClient
-import asyncio
+```swift
+// Check login status
+BornIDSDK.shared.isLoggedIn() async -> Bool
 
-# Initialize client
-client = DigiCAPClient(
-    api_key="your-api-key-here",
-    environment="production"
+// Usage
+let isLoggedIn = await BornIDSDK.shared.isLoggedIn()
+```
+
+Fetches the latest user information.
+
+```swift
+// Fetch user profile
+BornIDSDK.shared.fetchMyProfile() async throws -> User
+
+// Usage
+let user = try await BornIDSDK.shared.fetchMyProfile()
+```
+
+### Media Upload
+
+Uploads an image or video file to the server. You can include location information and a description, and optionally generate a media fingerprint.
+
+```swift
+// Upload Media
+BornIDSDK.shared.uploadMedia(
+    companyId: String,
+    data: Data,
+    mediaType: MediaType,
+    location: CLLocation,
+    description: String? = nil,
+    fingerprint: Bool? = nil
+) async throws -> URL
+
+// Usage
+let uploadURL = try await BornIDSDK.shared.uploadMedia(
+    companyId: "company-id",
+    data: imageData,
+    mediaType: .image,
+    location: currentLocation,
+    description: "Description",
+    fingerprint: true
 )
-
-# Synchronous method
-def create_signed_content():
-    # Add metadata and signature
-    result = client.metadata.create(
-        file_path="./image.jpg",
-        metadata={
-            "title": "Sample Image",
-            "creator": "photographer@example.com",
-            "location": {"lat": 37.5665, "lng": 126.9780}
-        },
-        sign=True,
-        certificate_path="./cert.pem"
-    )
-    
-    print(f"Content ID: {result.content_id}")
-    print(f"Signature valid: {result.signature_valid}")
-    
-    return result
-
-# Asynchronous method
-async def verify_content_async():
-    verification = await client.verify_async(
-        file_path="./suspicious_image.jpg",
-        check_metadata=True,
-        check_fingerprint=True,
-        check_deepfake=True
-    )
-    
-    return verification
-
-# Batch processing
-def process_batch():
-    image_files = ["img1.jpg", "img2.jpg", "img3.jpg"]
-    
-    results = client.batch_process(
-        files=image_files,
-        operations=["fingerprint", "metadata"],
-        max_workers=4
-    )
-    
-    for file_path, result in results.items():
-        print(f"{file_path}: {result.status}")
-
-# Execute
-if __name__ == "__main__":
-    # Synchronous execution
-    create_signed_content()
-    
-    # Asynchronous execution
-    asyncio.run(verify_content_async())
-    
-    # Batch processing
-    process_batch()
 ```
 
-## Common Features
+### List Media
 
-### Error Handling
+Retrieves a paginated list of media uploaded by a specific user. You can specify the number of items to fetch and the starting point.
 
-All SDKs provide consistent error handling:
+```swift
+// List Media
+BornIDSDK.shared.listMedia(
+    userId: String,
+    limit: Int = 20,
+    offset: Int = 0
+) async throws -> MediaListResponse
 
-```javascript
-// JavaScript
-try {
-  const result = await client.verify(params);
-} catch (error) {
-  switch (error.code) {
-    case 'INVALID_API_KEY':
-      console.log('Invalid API key');
-      break;
-    case 'FILE_TOO_LARGE':
-      console.log('File size too large');
-      break;
-    case 'UNSUPPORTED_FORMAT':
-      console.log('Unsupported file format');
-      break;
-    default:
-      console.log('Unknown error:', error.message);
-  }
+// Usage
+let mediaList = try await BornIDSDK.shared.listMedia(userId: "user-id", limit: 10)
+```
+
+### Media Verification
+
+Analyzes the C2PA signature and metadata contained in a media file to verify the content's authenticity. It can check for manipulation and aenti provenance information.
+
+Verifies the authenticity of media data in memory. The result is returned in JSON format.
+
+```swift
+// Verify Data
+BornIDSDK.shared.verifyMedia(data: Data, ext: String) -> String?
+
+// Usage
+let result = BornIDSDK.shared.verifyMedia(data: imageData, ext: "jpg")
+```
+
+Verifies the authenticity of a media file stored in the file system. It accesses and analyzes the file via its path.
+
+```swift
+// Verify File
+BornIDSDK.shared.verifyMedia(fileURL: URL, ext: String) -> String?
+
+// Usage
+let result = BornIDSDK.shared.verifyMedia(fileURL: imageURL, ext: "jpg")
+```
+
+### Location Information
+
+Manages location permissions within the app and retrieves the current location information.
+
+```swift
+// Check location authorization status
+BornIDSDK.shared.locationAuthorizationStatus() -> CLAuthorizationStatus
+
+// Request location permission
+BornIDSDK.shared.requestLocationPermission()
+
+// Usage
+if BornIDSDK.shared.locationAuthorizationStatus() == .notDetermined {
+    BornIDSDK.shared.requestLocationPermission()
 }
 ```
 
-### Configuration Options
+### Settings Management
 
-```javascript
-const client = new DigiCAPClient({
-  apiKey: 'your-api-key',
-  environment: 'production', // 'sandbox' or 'production'
-  timeout: 30000, // 30 second timeout
-  retryAttempts: 3, // Retry count
-  enableLogging: true, // Debug logging
-  baseURL: 'https://api.digicap.com/v1' // Custom endpoint
-});
+Allows you to manage various settings of the SDK.
+
+```swift
+// Access settings manager
+BornIDSDK.shared.getSettingsManager() -> SettingsManager
+
+// Usage
+let settingsManager = BornIDSDK.shared.getSettingsManager()
 ```
 
-## Support and Contact
+### Camera Functionality
+
+Displays the SDK's built-in camera screen to capture photos. It can collect metadata and apply a C2PA signature simultaneously with the capture.
+
+```swift
+// Present Camera
+BornIDSDK.shared.presentCamera(from: UIViewController, delegate: CameraViewControllerDelegate)
+
+// Usage
+BornIDSDK.shared.presentCamera(from: self, delegate: self)
+```
+
+## Delegate Protocol
+
+### CameraViewControllerDelegate
+
+```swift
+protocol CameraViewControllerDelegate {
+    func cameraViewController(_ controller: UIViewController, didCaptureImage image: UIImage, with metadata: [String: Any])
+    func cameraViewControllerDidCancel(_ controller: UIViewController)
+}
+```
+
+## Data Model
+
+### MediaType
+
+```swift
+enum MediaType {
+    case image
+    case video
+}
+```
+
+## Error Handling
+
+All asynchronous functions in the SDK use Swift's standard error handling mechanism:
+
+```swift
+do {
+    let user = try await BornIDSDK.shared.login(email: email, password: password)
+    // Handle success
+} catch {
+    // Handle error
+    print("Error: \(error.localizedDescription)")
+}
+```
+
+## Support and Inquiries
 
 ### Technical Support
 
-- **Developer Portal**: [https://developers.digicap.com](https://developers.digicap.com)
-- **API Documentation**: [https://docs.digicap.com/api](https://docs.digicap.com/api)
-- **GitHub Repository**: [https://github.com/digicap/sdks](https://github.com/digicap/sdks)
-- **Email Support**: [dev-support@digicap.com](mailto:dev-support@digicap.com)
+- **Email**: [info.bornid@digicaps.com](mailto:info.bornid@digicaps.com)
 
-### Community
+### System Requirements
 
-- **Discord**: [DigiCAP Developer Community](https://discord.gg/digicap-dev)
-- **Stack Overflow**: Use `digicap` tag
-- **YouTube**: [DigiCAP Developer Channel](https://youtube.com/digicap-dev)
+- **iOS**: 15.0 or later
+- **Xcode**: 14.0 or later
+- **Swift**: 5.0 or later
 
 ---
-
-For more examples and tutorials, visit [Developer Documentation](https://developers.digicap.com). 
